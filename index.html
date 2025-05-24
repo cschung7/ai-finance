@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네트워크 학습 포털</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.05) 100%);
+            z-index: 1;
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            opacity: 0.2;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="py-6 px-4 md:px-10 border-b border-gray-700">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl md:text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">네트워크 학습 포털 🌐</h1>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center">
+        <div class="max-w-6xl w-full mx-auto px-4 py-10 md:py-20">
+            <div class="mb-10 text-center">
+                <p class="text-lg text-gray-300 max-w-2xl mx-auto">네트워크 개념을 학습하고 실제 네트워크 시각화를 실습해볼 수 있는 통합 플랫폼입니다.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <a href="gemini_doc.html" class="card relative bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl p-8 flex flex-col h-80 border border-blue-600">
+                    <span class="card-icon">📚</span>
+                    <h2 class="text-2xl font-bold mb-2 text-white">네트워크 기초 개념 인포그래픽</h2>
+                    <p class="text-blue-200 mb-6">경제학도를 위한 네트워크 핵심 탐구: 네트워크의 기본 개념부터 경제적 영향까지, 한눈에 살펴보세요.</p>
+                    <ul class="text-blue-100 mb-auto space-y-2">
+                        <li class="flex items-center"><span class="mr-2">✓</span> 네트워크 효과와 메트칼프 법칙</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> 네트워크 구조 (중앙 집중형 vs. 분산형)</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> 네트워크 경제학과 AI 시대</li>
+                    </ul>
+                    <div class="mt-6 pt-4 border-t border-blue-600/50 text-white font-medium flex justify-between items-center">
+                        <span>문서 열기</span>
+                        <span>→</span>
+                    </div>
+                </a>
+
+                <a href="networkx_playground.html" class="card relative bg-gradient-to-br from-teal-900 to-teal-700 rounded-2xl p-8 flex flex-col h-80 border border-teal-600">
+                    <span class="card-icon">🔬</span>
+                    <h2 class="text-2xl font-bold mb-2 text-white">NetworkX 시각화 연습장</h2>
+                    <p class="text-teal-200 mb-6">Python NetworkX 라이브러리를 활용한 다양한 네트워크 시각화 기법을 직접 실습해보세요.</p>
+                    <ul class="text-teal-100 mb-auto space-y-2">
+                        <li class="flex items-center"><span class="mr-2">✓</span> 기본 그래프 생성 및 시각화</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> 중심성 측정과 노드 색상 매핑</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> 가중치 기반 엣지 표현</li>
+                    </ul>
+                    <div class="mt-6 pt-4 border-t border-teal-600/50 text-white font-medium flex justify-between items-center">
+                        <span>실습 시작하기</span>
+                        <span>→</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-6 px-4 text-center text-gray-400 text-sm border-t border-gray-700">
+        <div class="max-w-6xl mx-auto">
+            <p>© <span id="currentYear"></span> 네트워크 학습 포털 | 경제학도를 위한 네트워크 학습 리소스</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Animation for card elements
+        anime({
+            targets: '.card',
+            translateY: [50, 0],
+            opacity: [0, 1],
+            delay: anime.stagger(150),
+            easing: 'easeOutQuad',
+            duration: 800
+        });
+    </script>
+</body>
+</html> 

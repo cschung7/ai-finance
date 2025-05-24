@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetworkX 시각화 연습장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .code-block { border-radius: 0.5rem; overflow: hidden; position: relative; }
+        .output-img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 0.5rem; }
+        .editor-container { 
+            border: 1px solid #ddd; 
+            border-radius: 0.5rem; 
+            overflow: hidden;
+            height: 300px;
+            position: relative;
+        }
+        .editor-buttons {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+        #codeEditor {
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            font-family: monospace;
+            background-color: #282c34;
+            color: #abb2bf;
+            border: none;
+            outline: none;
+            resize: none;
+        }
+        .output-container {
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #0D6EFD;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* New styles for copy button and collapsible code */
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(13, 110, 253, 0.2);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        .copy-btn:hover {
+            background-color: rgba(13, 110, 253, 0.4);
+        }
+        .code-container {
+            display: none;
+            margin-top: 10px;
+        }
+        .code-title {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .code-title::after {
+            content: "▼";
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        .code-title.active::after {
+            content: "▲";
+        }
+        .copy-success {
+            position: absolute;
+            top: 10px;
+            right: 70px;
+            background-color: rgba(25, 135, 84, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-[#E7F1FF] text-[#343A40]">
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#0A58CA] mb-3">🔌 NetworkX 시각화 연습장</h1>
+            <p class="text-lg text-[#6C757D]">파이썬 NetworkX 라이브러리로 네트워크 시각화 기법 익히기</p>
+        </header>
+
+        <section class="mb-12 bg-white rounded-xl shadow-lg p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-[#0D6EFD] mb-4">코드 편집 및 실행</h2>
+            <p class="mb-4">아래 코드 에디터에서 NetworkX 코드를 작성하고 실행 버튼을 클릭하면 로컬에서 코드가 실행되어 결과가 표시됩니다.</p>
+            
+            <div class="editor-container mb-4">
+                <textarea id="codeEditor" spellcheck="false">
+# 기본 그래프 생성하기
+G = nx.Graph()  # 무방향 그래프
+
+# 노드 추가
+G.add_nodes_from([1, 2, 3, 4, 5])
+
+# 엣지 추가
+G.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 5), (4, 5)])
+
+# 그래프 그리기
+plt.figure(figsize=(8, 6))
+nx.draw(G, with_labels=True, node_color='skyblue', node_size=800, font_size=15)
+plt.title("기본 NetworkX 그래프")
+</textarea>
+                <div class="editor-buttons">
+                    <button id="runButton" class="bg-[#20C997] text-white font-semibold px-6 py-2 rounded-lg hover:bg-[#17a277] transition-colors">
+                        코드 실행
+                    </button>
+                </div>
+            </div>
+            
+            <div class="output-container p-4 bg-[#F8F9FA] rounded-lg border border-[#CED4DA]">
+                <div id="outputLoader" class="loader"></div>
+                <div id="outputError" class="hidden text-red-500 text-center w-full"></div>
+                <img id="outputImage" class="output-img hidden" alt="코드 실행 결과">
+                <p id="noOutputText" class="text-center text-[#6C757D]">코드를 실행하면 여기에 결과가 표시됩니다.</p>
+            </div>
+        </section>
+
+        <section class="mb-12 bg-white rounded-xl shadow-lg p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-[#0D6EFD] mb-4">예제 코드 모음</h2>
+            <p class="mb-4">아래 예제 코드 제목을 클릭하면 코드가 표시됩니다. 코드를 에디터에 복사하려면 "에디터에 복사" 버튼을 클릭하세요.</p>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="p-4 bg-[#F8F9FA] rounded-lg border border-[#CED4DA]">
+                    <h3 class="text-lg font-semibold text-[#0A58CA] mb-2 code-title" data-target="basicExample">기본 그래프</h3>
+                    <div id="basicExample" class="code-container">
+                        <div class="code-block">
+                            <button class="copy-btn" data-code="basicExample">복사</button>
+                            <span class="copy-success">복사됨!</span>
+                            <pre><code class="language-python">
+# 기본 그래프 생성하기
+G = nx.Graph()  # 무방향 그래프
+
+# 노드 추가
+G.add_nodes_from([1, 2, 3, 4, 5])
+
+# 엣지 추가
+G.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 5), (4, 5)])
+
+# 그래프 그리기
+plt.figure(figsize=(8, 6))
+nx.draw(G, with_labels=True, node_color='skyblue', node_size=800, font_size=15)
+plt.title("기본 NetworkX 그래프")
+                            </code></pre>
+                            <button class="w-full mt-2 bg-[#0D6EFD] text-white py-2 px-4 rounded-md hover:bg-[#0b5ed7] transition-colors" onclick="copyCodeToEditor('basicExample')">에디터에 복사</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#F8F9FA] rounded-lg border border-[#CED4DA]">
+                    <h3 class="text-lg font-semibold text-[#0A58CA] mb-2 code-title" data-target="koreanExample">한글 텍스트 그래프</h3>
+                    <div id="koreanExample" class="code-container">
+                        <div class="code-block">
+                            <button class="copy-btn" data-code="koreanExample">복사</button>
+                            <span class="copy-success">복사됨!</span>
+                            <pre><code class="language-python">
+# 한글 노드 라벨이 있는 그래프 생성
+G = nx.Graph()
+
+# 한글 노드 추가
+nodes = ["서울", "부산", "인천", "대구", "광주", "대전", "울산"]
+G.add_nodes_from(nodes)
+
+# 엣지 추가
+edges = [
+    ("서울", "인천", 30), ("서울", "대전", 140), 
+    ("대전", "대구", 120), ("대전", "광주", 170),
+    ("대구", "울산", 70), ("대구", "부산", 80),
+    ("광주", "부산", 190)
+]
+G.add_weighted_edges_from(edges)
+
+# 엣지 두께 설정
+weights = [G[u][v]['weight']/30 for u, v in G.edges()]
+
+plt.figure(figsize=(10, 8))
+pos = nx.spring_layout(G, seed=42)  # 노드 위치 설정
+
+# 노드 그리기
+nx.draw_networkx_nodes(
+    G, pos,
+    node_color='lightblue',
+    node_size=1000,
+    alpha=0.8
+)
+
+# 엣지 그리기
+nx.draw_networkx_edges(
+    G, pos,
+    width=weights,
+    alpha=0.7,
+    edge_color='gray'
+)
+
+# 라벨 그리기
+nx.draw_networkx_labels(
+    G, pos,
+    font_size=14,
+    font_weight='bold'
+)
+
+# 엣지 라벨 그리기 (거리 km)
+edge_labels = {(u, v): f"{d['weight']}km" for u, v, d in G.edges(data=True)}
+nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10)
+
+plt.title("한국 주요 도시간 거리 네트워크")
+plt.axis('off')  # 축 제거
+                            </code></pre>
+                            <button class="w-full mt-2 bg-[#0D6EFD] text-white py-2 px-4 rounded-md hover:bg-[#0b5ed7] transition-colors" onclick="copyCodeToEditor('koreanExample')">에디터에 복사</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#F8F9FA] rounded-lg border border-[#CED4DA]">
+                    <h3 class="text-lg font-semibold text-[#0A58CA] mb-2 code-title" data-target="weightedExample">가중치 엣지</h3>
+                    <div id="weightedExample" class="code-container">
+                        <div class="code-block">
+                            <button class="copy-btn" data-code="weightedExample">복사</button>
+                            <span class="copy-success">복사됨!</span>
+                            <pre><code class="language-python">
+# 가중치가 있는 그래프 생성
+G = nx.Graph()
+weighted_edges = [
+    (1, 2, 2.0), (1, 3, 0.5), (2, 3, 1.0),
+    (2, 4, 3.0), (3, 5, 1.5), (4, 5, 2.5)
+]
+# (시작노드, 끝노드, 가중치) 형태로 추가
+G.add_weighted_edges_from(weighted_edges)
+
+# 엣지 두께를 가중치에 따라 설정
+weights = [G[u][v]['weight'] for u, v in G.edges()]
+# 시각적으로 더 분명하게 하기 위해 가중치에 3을 곱함
+edge_widths = [w * 3 for w in weights]
+
+plt.figure(figsize=(10, 8))
+pos = nx.spring_layout(G, seed=42)  # 노드 위치 설정
+nx.draw(
+    G, pos, with_labels=True,
+    node_color='lightblue', node_size=800,
+    font_size=15, font_weight='bold',
+    width=edge_widths,  # 각 엣지의 두께 지정
+    edge_color='gray'
+)
+
+# 가중치 텍스트 추가
+edge_labels = {(u, v): f"{d['weight']:.1f}" for u, v, d in G.edges(data=True)}
+nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=12)
+
+plt.title("엣지 두께가 가중치에 비례하는 그래프")
+                            </code></pre>
+                            <button class="w-full mt-2 bg-[#0D6EFD] text-white py-2 px-4 rounded-md hover:bg-[#0b5ed7] transition-colors" onclick="copyCodeToEditor('weightedExample')">에디터에 복사</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#F8F9FA] rounded-lg border border-[#CED4DA]">
+                    <h3 class="text-lg font-semibold text-[#0A58CA] mb-2 code-title" data-target="centralityExample">중심성 시각화</h3>
+                    <div id="centralityExample" class="code-container">
+                        <div class="code-block">
+                            <button class="copy-btn" data-code="centralityExample">복사</button>
+                            <span class="copy-success">복사됨!</span>
+                            <pre><code class="language-python">
+# 카라테 클럽 데이터셋 불러오기
+G = nx.karate_club_graph()
+
+# 노드의 연결 중심성(Degree Centrality) 계산
+degree_centrality = nx.degree_centrality(G)
+
+# 노드 크기를 연결 중심성에 비례하게 설정
+node_size = [v * 5000 for v in degree_centrality.values()]
+
+# 노드 색상을 중심성에 따라 열지도(heatmap) 형태로 지정
+cmap = plt.cm.viridis  # 색상 맵
+node_color = list(degree_centrality.values())
+
+plt.figure(figsize=(12, 10))
+pos = nx.spring_layout(G, seed=42)
+
+# 엣지 그리기
+nx.draw_networkx_edges(G, pos, alpha=0.3)
+
+# 노드 그리기 (크기와 색상을 중심성에 따라 다르게)
+nodes = nx.draw_networkx_nodes(
+    G, pos,
+    node_size=node_size,
+    node_color=node_color,
+    cmap=cmap,
+    alpha=0.8
+)
+
+# 라벨 그리기
+nx.draw_networkx_labels(G, pos, font_size=10, font_weight='bold')
+
+# 컬러바 추가
+plt.colorbar(nodes, label='연결 중심성')
+
+plt.title("중심성에 따른 노드 색상 변화")
+plt.axis('off')  # 축 제거
+                            </code></pre>
+                            <button class="w-full mt-2 bg-[#0D6EFD] text-white py-2 px-4 rounded-md hover:bg-[#0b5ed7] transition-colors" onclick="copyCodeToEditor('centralityExample')">에디터에 복사</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#F8F9FA] rounded-lg border border-[#CED4DA]">
+                    <h3 class="text-lg font-semibold text-[#0A58CA] mb-2 code-title" data-target="communityExample">커뮤니티 탐지</h3>
+                    <div id="communityExample" class="code-container">
+                        <div class="code-block">
+                            <button class="copy-btn" data-code="communityExample">복사</button>
+                            <span class="copy-success">복사됨!</span>
+                            <pre><code class="language-python">
+# 임의의 그래프 생성 (Erdos-Renyi 모델)
+G = nx.gnm_random_graph(20, 40, seed=42)
+
+# 노드 간 가중치 추가 (임의 가중치)
+for u, v in G.edges():
+    G[u][v]['weight'] = np.random.uniform(0.5, 3.0)
+
+# 커뮤니티 탐지 - 그리디 모듈성 알고리즘 사용
+communities = list(nx.community.greedy_modularity_communities(G))
+partition = {}
+for i, comm in enumerate(communities):
+    for node in comm:
+        partition[node] = i
+
+# 커뮤니티별 색상 지정
+num_communities = len(set(partition.values()))
+colors = plt.cm.tab10(np.linspace(0, 1, num_communities))
+node_colors = [colors[partition[node]] for node in G.nodes()]
+
+# 엣지 두께 설정
+edge_weights = [G[u][v]['weight'] for u, v in G.edges()]
+edge_widths = [w * 1.5 for w in edge_weights]
+
+# 매개 중심성 계산
+bc = nx.betweenness_centrality(G, weight='weight')
+
+# 노드 크기를 매개 중심성에 비례하게 설정
+node_size = [v * 3000 + 300 for v in bc.values()]
+
+plt.figure(figsize=(12, 10))
+pos = nx.spring_layout(G, seed=42, weight='weight')
+
+# 엣지 그리기
+nx.draw_networkx_edges(
+    G, pos,
+    width=edge_widths,
+    alpha=0.7,
+    edge_color='gray'
+)
+
+# 노드 그리기
+nx.draw_networkx_nodes(
+    G, pos,
+    node_size=node_size,
+    node_color=node_colors,
+    alpha=0.9
+)
+
+# 라벨 그리기
+nx.draw_networkx_labels(G, pos, font_size=10, font_weight='bold')
+
+plt.title("커뮤니티 탐지 및 가중치 시각화")
+plt.axis('off')  # 축 제거
+                            </code></pre>
+                            <button class="w-full mt-2 bg-[#0D6EFD] text-white py-2 px-4 rounded-md hover:bg-[#0b5ed7] transition-colors" onclick="copyCodeToEditor('communityExample')">에디터에 복사</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-[#F8F9FA] rounded-lg border border-[#CED4DA]">
+                    <h3 class="text-lg font-semibold text-[#0A58CA] mb-2 code-title" data-target="economicNetworkExample">경제 네트워크 예제</h3>
+                    <div id="economicNetworkExample" class="code-container">
+                        <div class="code-block">
+                            <button class="copy-btn" data-code="economicNetworkExample">복사</button>
+                            <span class="copy-success">복사됨!</span>
+                            <pre><code class="language-python">
+# 한국 산업 부문간 네트워크 시각화
+G = nx.DiGraph()  # 방향 그래프 생성
+
+# 산업 부문 (노드) 추가
+sectors = [
+    "제조업", "정보통신", "금융", "유통", 
+    "건설", "에너지", "농업", "운송"
+]
+G.add_nodes_from(sectors)
+
+# 산업 부문간 거래 관계 (엣지) 추가 (부문1, 부문2, 거래규모)
+relations = [
+    ("제조업", "유통", 100), ("제조업", "건설", 80),
+    ("정보통신", "금융", 60), ("정보통신", "제조업", 85),
+    ("금융", "제조업", 90), ("금융", "건설", 70),
+    ("금융", "유통", 55), ("금융", "정보통신", 45),
+    ("유통", "소비자", 110), ("건설", "에너지", 40),
+    ("에너지", "제조업", 95), ("에너지", "운송", 50),
+    ("농업", "유통", 75), ("농업", "제조업", 30),
+    ("운송", "유통", 65), ("운송", "농업", 25)
+]
+
+# 엣지 추가 (거래규모를 가중치로 설정)
+for source, target, weight in relations:
+    if target not in G:  # "소비자"와 같이 명시적으로 추가하지 않은 노드 처리
+        G.add_node(target)
+    G.add_edge(source, target, weight=weight)
+
+# 노드 크기를 연결 중심성에 비례하게 설정
+degree = dict(G.degree(weight='weight'))
+node_size = [degree.get(node, 0) * 5 for node in G.nodes()]
+
+# 노드 색상 설정
+sector_colors = {
+    "제조업": "lightblue", "정보통신": "lightgreen", 
+    "금융": "gold", "유통": "coral",
+    "건설": "tan", "에너지": "tomato", 
+    "농업": "mediumseagreen", "운송": "plum",
+    "소비자": "silver"  # 추가 노드
+}
+node_colors = [sector_colors.get(node, "lightgray") for node in G.nodes()]
+
+plt.figure(figsize=(12, 10))
+pos = nx.spring_layout(G, seed=42, k=0.3)  # k는 노드 간 거리
+
+# 엣지 그리기
+edge_weights = [G[u][v]['weight']/25 for u, v in G.edges()]
+nx.draw_networkx_edges(
+    G, pos,
+    width=edge_weights,
+    alpha=0.6,
+    edge_color='gray',
+    connectionstyle='arc3,rad=0.1',  # 곡선 화살표
+    arrowsize=15
+)
+
+# 노드 그리기
+nx.draw_networkx_nodes(
+    G, pos,
+    node_size=node_size,
+    node_color=node_colors,
+    alpha=0.9
+)
+
+# 라벨 그리기
+nx.draw_networkx_labels(G, pos, font_size=12, font_weight='bold')
+
+# 엣지 라벨 그리기
+edge_labels = {(u, v): f"{d['weight']}조" for u, v, d in G.edges(data=True)}
+nx.draw_networkx_edge_labels(
+    G, pos, 
+    edge_labels=edge_labels,
+    font_size=8,
+    label_pos=0.3  # 라벨 위치 조정
+)
+
+plt.title("한국 산업 부문간 거래 네트워크 (단위: 조원)")
+plt.axis('off')
+                            </code></pre>
+                            <button class="w-full mt-2 bg-[#0D6EFD] text-white py-2 px-4 rounded-md hover:bg-[#0b5ed7] transition-colors" onclick="copyCodeToEditor('economicNetworkExample')">에디터에 복사</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center pt-8 pb-4">
+            <p class="text-sm text-[#6C757D]">Copyright &copy; <span id="currentYear"></span> NetworkX 시각화 연습장. 경제학도 학습자료.</p>
+            <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
+        </footer>
+    </div>
+
+    <script>
+        // 코드 하이라이팅 적용
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // 실행 버튼 이벤트 리스너
+            document.getElementById('runButton').addEventListener('click', runCode);
+            
+            // 코드 제목 클릭 이벤트 설정
+            document.querySelectorAll('.code-title').forEach(title => {
+                title.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const container = document.getElementById(targetId);
+                    
+                    // 모든 컨테이너 닫기
+                    document.querySelectorAll('.code-container').forEach(cont => {
+                        if (cont !== container) {
+                            cont.style.display = 'none';
+                        }
+                    });
+                    
+                    // 모든 타이틀에서 active 클래스 제거
+                    document.querySelectorAll('.code-title').forEach(t => {
+                        if (t !== this) {
+                            t.classList.remove('active');
+                        }
+                    });
+                    
+                    // 토글 현재 컨테이너
+                    if (container.style.display === 'block') {
+                        container.style.display = 'none';
+                        this.classList.remove('active');
+                    } else {
+                        container.style.display = 'block';
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // 복사 버튼 이벤트 설정
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // 이벤트 버블링 방지
+                    
+                    const codeId = this.getAttribute('data-code');
+                    const codeElement = document.querySelector(`#${codeId} code`);
+                    const successMsg = this.nextElementSibling;
+                    
+                    navigator.clipboard.writeText(codeElement.textContent.trim())
+                        .then(() => {
+                            // 복사 성공 메시지 표시
+                            successMsg.style.display = 'block';
+                            setTimeout(() => {
+                                successMsg.style.display = 'none';
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('클립보드 복사 실패:', err);
+                        });
+                });
+            });
+            
+            // 첫 번째 코드 예제 자동으로 열기
+            const firstCodeTitle = document.querySelector('.code-title');
+            if (firstCodeTitle) {
+                firstCodeTitle.click();
+            }
+        });
+        
+        // 예제 코드를 에디터에 복사하는 함수
+        function copyCodeToEditor(codeBlockId) {
+            const code = document.querySelector(`#${codeBlockId} code`).textContent;
+            document.getElementById('codeEditor').value = code.trim();
+            
+            // 스크롤을 에디터 섹션으로 이동
+            const editorSection = document.querySelector('.editor-container');
+            editorSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 코드 실행 함수
+        async function runCode() {
+            // UI 업데이트
+            const outputImage = document.getElementById('outputImage');
+            const outputLoader = document.getElementById('outputLoader');
+            const outputError = document.getElementById('outputError');
+            const noOutputText = document.getElementById('noOutputText');
+            
+            outputImage.classList.add('hidden');
+            outputError.classList.add('hidden');
+            noOutputText.classList.add('hidden');
+            outputLoader.style.display = 'block';
+            
+            // 코드 추출
+            const code = document.getElementById('codeEditor').value;
+            
+            try {
+                // FormData 생성
+                const formData = new FormData();
+                formData.append('code', code);
+                
+                // API 호출
+                const response = await fetch('/run-code', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                // 결과 처리
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // 이미지 업데이트 및 표시
+                    outputImage.src = result.image_path + '?t=' + new Date().getTime(); // 캐시 방지
+                    outputImage.onload = function() {
+                        outputLoader.style.display = 'none';
+                        outputImage.classList.remove('hidden');
+                    };
+                } else {
+                    // 에러 처리
+                    const errorData = await response.json();
+                    outputLoader.style.display = 'none';
+                    outputError.textContent = '오류: ' + errorData.detail;
+                    outputError.classList.remove('hidden');
+                }
+            } catch (error) {
+                // 네트워크 오류 등 예외 처리
+                outputLoader.style.display = 'none';
+                outputError.textContent = '오류: ' + error.message;
+                outputError.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html> 
